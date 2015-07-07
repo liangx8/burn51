@@ -10,10 +10,11 @@ sample of fw.tpl
 
 
 */
-//#include <stdint.h>
+#include <stdint.h>// uint8_t
 #include <stdio.h>
 #include <unistd.h>//getopt()
 #include <stdlib.h>//atoi()
+#include <time.h>//time(),gmtime()
 #include <malloc.h>
 #include <libintl.h>
 
@@ -191,14 +192,30 @@ int check(FILE *in,FILE *out){
 }
 void render(FILE *in,FILE *out,uint8_t *buf,const char *tag,int size){
   int ch;
-  //  const char *holder[]={HOLDER_TAG,HOLDER_SIZE,HOLDER_DATE};
+  time_t t=time(NULL);
+  struct tm *mt;
 
+  if(t==((time_t)-1)){
+	printf(gettext("time() error"));
+	return;
+  }
+  mt=gmtime(&t);
+  if(NULL==mt){
+	printf(gettext("gmtime() error"));
+	return;
+  }
   while((ch=fgetc(in))!=EOF){
 	if(ch=='@'){
 	  int retval=check(in,out);
 	  switch(retval){
 	  case MATCH_DATE:
-		fprintf(out,"today is 2015-07-07");
+		fprintf(out,"%04d-%02d-%02d %02d:%02d:%02d",
+				mt->tm_year+1900,
+				mt->tm_mon+1,
+				mt->tm_mday+1,
+				mt->tm_hour,
+				mt->tm_min,
+				mt->tm_sec);
 		continue;
 	  case MATCH_SIZE:
 		fprintf(out,"%d",size);
