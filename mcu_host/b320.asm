@@ -1,4 +1,6 @@
 ; -*- mode:msc51; coding:utf-8 -*-
+;;; 对C8051F 系列的单片机烧写，文档参考 C2spec.pdf
+;;; Silicon Labs 公司的网页上能找到，
 .include "c8051f320.h"
 
 ; constants and micro {{{

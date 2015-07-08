@@ -8,10 +8,10 @@ TARGET = burn
 #TARGET = phone_charger
 #TARGET = exercise
 #TARGET = test
-AS=d:/p/mcu_dev/sdcc/bin/sdas8051.exe
-LD=d:/p/mcu_dev/sdcc/bin/sdld.exe -i
-#AS=sdas8051.exe
-#LD=sdld.exe -i
+#AS=d:/p/mcu_dev/sdcc/bin/sdas8051.exe
+#LD=d:/p/mcu_dev/sdcc/bin/sdld.exe -i
+AS=sdas8051.exe
+LD=sdld.exe -i
 
 
 CFLAGS=-l -s -o
