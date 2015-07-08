@@ -155,7 +155,7 @@ int ihex(FILE* fp,uint8_t **buf,uint8_t padding, int *size){
   free(*buf);
   return -1;
 }
-// 返回 1, 吻合当前的holder，
+// 返回 吻合当前的holder
 int check(FILE *in,FILE *out){
   char keep[SIZE_HOLDER];
   int i,ch;
@@ -199,9 +199,9 @@ void render(FILE *in,FILE *out,uint8_t *buf,const char *tag,int size){
 	printf(gettext("time() error"));
 	return;
   }
-  mt=gmtime(&t);
+  mt=localtime(&t);
   if(NULL==mt){
-	printf(gettext("gmtime() error"));
+	printf(gettext("localtime() error"));
 	return;
   }
   while((ch=fgetc(in))!=EOF){
@@ -221,7 +221,7 @@ void render(FILE *in,FILE *out,uint8_t *buf,const char *tag,int size){
 		fprintf(out,"%d",size);
 		continue;
 	  case MATCH_TAG:
-		fprintf(out,tag);
+		fprintf(out,"%s",tag);
 		continue;
 	  default:
 		continue;
@@ -243,13 +243,13 @@ void render(FILE *in,FILE *out,uint8_t *buf,const char *tag,int size){
 		  }
 		  fprintf(out," 0x%02x",buf[cnt*256+x*16+y]);
 		}
-		fprintf(out,"; 0x%04x \n",cnt * 256 + x * 16);
+		fprintf(out,"; 0x%04x\n",cnt * 256 + x * 16);
 	  }
 	}
   }
 }
 void usage(const char *self){
-  printf(gettext("%s:\n\t%s %s... %s\n"),gettext("usage"),self,gettext("[OPTION]"),gettext("FILE"));
+  printf("%s:\n\t%s %s... %s\n",gettext("usage"),self,gettext("[OPTION]"),gettext("FILE"));
   printf("\
 \t-o <file>       %s\n\
 \t-r              %s\n\
@@ -344,7 +344,5 @@ int main(int argc, char **argv){
   }
   free(fwdata);
   fclose(fpTpl);
-
   return 0;
-
 }
