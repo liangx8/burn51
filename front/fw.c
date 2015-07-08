@@ -212,7 +212,7 @@ void render(FILE *in,FILE *out,uint8_t *buf,const char *tag,int size){
 		fprintf(out,"%04d-%02d-%02d %02d:%02d:%02d",
 				mt->tm_year+1900,
 				mt->tm_mon+1,
-				mt->tm_mday+1,
+				mt->tm_mday,
 				mt->tm_hour,
 				mt->tm_min,
 				mt->tm_sec);
