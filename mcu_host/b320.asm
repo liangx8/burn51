@@ -3,7 +3,7 @@
 ;;; Silicon Labs 公司的网页上能找到，
 ;;; 2015-07-08
 ;;; c2_data_read,c2_data_write,c2_addr_read,c2_addr_write have issues as below
-;;; 等待反馈时，没有检测超时机制
+;;; 等待反馈时，没有检测超时机制, 看pi_inbusy,应该只有这里会死循环
 .include "c8051f320.h"
 
 ; {{{ constants and micro
@@ -61,19 +61,25 @@ start:
 	acall	init_timer
 	mov		XBR0,#0
 	mov		XBR1,#0x40		; enabel crossbar and weakpud
-	clr		OC2CK
+
 ;ajmp test_buttom_and_led
 ; ready for burn
 	acall	delay_500ms
 	setb	GREEN_LED
 burn_ready:
-	clr		OC2CK
+	jnb		BU,burn_ready
 1$:
 	acall	push_button
 	jnb		f0,1$
 	clr		RED_LED
 
+
+	cpl		GREEN_LED
+	acall	delay_500ms
+	cpl		GREEN_LED
+
 	acall	c2_reset
+
 	acall	pi_init
 	acall	pi_erase_device
 	acall	burn
@@ -147,15 +153,7 @@ verify_error:
 ; }}}
 ; {{{ function burn
 burn:
-	mov		r7,#3
-90$:
 	setb	GREEN_LED
-	acall	delay_500ms
-	clr		GREEN_LED
-	acall	delay_500ms
-	djnz	r7,90$
-
-
 	mov		fw_page,#FW_PAGES
 	mov		hi_addr,#0
 0$:
@@ -224,7 +222,7 @@ init_other:
 	mov		C2_MDIN,a
 	mov		a,#0xff - ((1<<C2D)+(1<<BUTTON))	; C2D and button set to open-drain
 	mov		C2_MDOUT,a
-	clr		OC2CK
+	setb	OC2CK
 	setb	BU				; set Port Latch for enable weak pull-up
 	ret
 
@@ -362,13 +360,15 @@ c2_reset:
 	setb	rs0
 	acall	delay_20us		; T_rd
 	setb	OC2CK
-	acall	delay_2us		; T_sd
+	;; acall	delay_2us			;T_sd
 	clr		rs0
 	ret
 ; }}}
 ; }}}
 ; {{{ PI routines
 ; {{{ function pi_inbusy
+;;; 参考 AN127.PDF C2 Address Register Status Bits
+;;; 进入死循环应该是这里。FIXME
 pi_inbusy:
 	acall	c2_addr_read
 	jb		acc.1,pi_inbusy
@@ -381,6 +381,8 @@ pi_outready:
 	ret
 ; }}}
 ; {{{ function pi_init
+;;; 在文档 AN127.PDF中要求要对地址输入 0x02,0x04,0x01,才能允许编程
+;;; 在C8051Fxx 的文档中只要 0x02,0x01 就可以了
 pi_init:
 	mov		a,#2
 	acall	c2_addr_write
@@ -388,6 +390,9 @@ pi_init:
 	acall	c2_data_write
 	mov		a,#1
 	acall	c2_data_write
+;;; 文档中描述，如果进入了编程状态，就必须用一个系统RESET的方法，才能
+;;; 让单片机回复到正常运行状态
+;;; 文档AN127.PDF中描述需要20ms的延时。
 	setb	rs0
 	acall	delay_5000us
 	clr		rs0
@@ -456,22 +461,30 @@ pi_write256:
 
 ; }}}
 ; {{{ function pi_erase_device
+;;; an127.pdf page 23
 pi_erase_device:
+;;; FPDAT address
 	mov		a,#0xb4
 	acall	c2_addr_write
+;;; Send Device Erase Command
 	mov		a,#3				; erase device command
 	acall	c2_data_write
 	acall	pi_inbusy
+;;; Read PI Command Status
 	acall	result_check
+;;; Write 1st Byte of the Arming Sequence
 	mov		a,#0xde
 	acall	c2_data_write
 	acall	pi_inbusy
+;;; Write 2nd Byte of the Arming Sequence
 	mov		a,#0xad
 	acall	c2_data_write
 	acall	pi_inbusy
+;;; Write 3rd Byte of the Arming Sequence
 	mov		a,#0xa5
 	acall	c2_data_write
 	acall	pi_inbusy
+;;; Read PI Command Status
 	sjmp	result_check
 ; }}}
 result_check:
