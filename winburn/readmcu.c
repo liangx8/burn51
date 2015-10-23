@@ -156,12 +156,14 @@ void readXMemory(void){
 error_end:
 	disconnectC2();
 }
-
+#define RUNNING 1
+#define STOP 2
+#define WAIT_XRAM_PAGE 3
 void interAction(void){
-	BYTE buf[512];
+	BYTE buf[4096];
 	HRESULT result;
 	const char *pChar;
-	int	is_running;
+	int	mcu_sta;
 	result=GetUSBDeviceSN(0,&pChar);
 	if(FAILED(result)){
 		wprintf(L"Get device serial number error(%x)!\n",result);
@@ -175,7 +177,7 @@ void interAction(void){
 	if(FAILED(run_target())){
 		goto error_end;
 	}
-	is_running=1;
+	mcu_sta=RUNNING;
 	wprintf(
 L"***************************************\n\
 *              debug mode             *\n\
@@ -189,51 +191,65 @@ L"***************************************\n\
 
 	while(1){
 		char c;
+		int num_page;
 
 		c=getchar();
+		if(mcu_sta==WAIT_XRAM_PAGE){
+		  num_page = c - '0';
+		  if(num_page<2 || num_page >9){
+			wprintf(L"\ninput n( n * 256) 2 ~ 9:");
+		  } else {
+			result=GetXRAMMemory(buf, 0, 256*num_page);
+			if(FAILED(result)){
+			  wprintf(L"Read XRAM error(%x)\n",result);
+			  goto error_end;
+			}
+			show(buf,16*num_page);
+			mcu_sta=STOP;
+		  }
+		}
 		switch(c){
 			case 'q':goto error_end;
 			case '\n':
-				wprintf(L"[r/q/x/i/h/g]\n");
-				if(is_running)
-					wprintf(L"R:");
-				else
-					wprintf(L"H:");
+				wprintf(L"[r/q/x?/i/h/g]\n");
+				switch(mcu_sta){
+				case RUNNING:
+				  wprintf(L"R:");break;
+				case STOP:
+				  wprintf(L"H:");break;
+
+		
+				}
+
 				break;
 			case 'h':
-				if(!is_running) break;
+				if(mcu_sta==STOP) break;
 				result=SetTargetHalt();
 				if(FAILED(result)){
 					wprintf(L"Set target halt error(%x)\n",result);
 					goto error_end;
-					
+
 				}
 				wprintf(L"Target halt\n");
-				is_running=0;
+				mcu_sta=STOP;
 				break;
 			case 'g':
-				if(is_running) break;
+				if(mcu_sta==RUNNING) break;
 				if(FAILED(run_target())){
 					goto error_end;
 				}
 				wprintf(L"target running\n");
-				is_running=1;
+				mcu_sta=RUNNING;
 				break;
 			case 'x':
-				if(is_running){
+				if(mcu_sta==RUNNING){
 					wprintf(L"halt target first\n");
 				}else {
-					
-					result=GetXRAMMemory(buf, 0, 512);
-					if(FAILED(result)){
-						wprintf(L"Read XRAM error(%x)\n",result);
-						goto error_end;
-					}
-					show(buf,32);
+				  mcu_sta=WAIT_XRAM_PAGE;
 				}
 				break;
 			case 'i':
-				if(is_running){
+				if(mcu_sta==RUNNING){
 					wprintf(L"halt target first\n");
 				}else {
 					result=GetRAMMemory(buf, 0, 256);
