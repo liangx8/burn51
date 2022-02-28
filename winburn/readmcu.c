@@ -58,18 +58,26 @@ void show(BYTE *buf,int size){
 		wprintf(L" %02x",i);
 	}
 	wprintf(L"\n");
-	for (i=0;i<size;i++){
+	int cols=size / 16;
+	for (i=0;i<cols;i++){
 		wprintf(L"%04x",i*16);
 		for(j=0;j<16;j++){
-			wprintf(L" %02x",buf[i*16+j]);
+			if(i * 16+j < size)
+				wprintf(L" %02x",buf[i*16+j]);
+			else
+				wprintf(L" ..");
 		}
 		wprintf(L"\t");
 		for(j=0;j<16;j++){
-			BYTE c=buf[i*16+j];
-			if ((c>='0' && c <='9') || (c >='a' && c <='z') || (c >= 'A' && c <= 'Z'))
-				wprintf(L"%c",c);
-			else
-				wprintf(L".");
+			if(i * 16+j < size){
+				BYTE c=buf[i*16+j];
+				if ((c>='0' && c <='9') || (c >='a' && c <='z') || (c >= 'A' && c <= 'Z'))
+					wprintf(L"%c",c);
+				else
+					wprintf(L".");
+			} else {
+				wprintf(L" ");
+			}
 		}
 		wprintf(L"\n");
 	}
@@ -88,7 +96,7 @@ void readMemory(void){
 	if(FAILED(result)){
 		return;
 	}
-	wprintf(L"Target running...\n");
+
 	if(FAILED(run_target())){
 		goto error_end;
 	}
@@ -111,15 +119,29 @@ void readMemory(void){
 		wprintf(L"Target running...\n");
 	}
 
-	show(buf,16);
+	show(buf,256);
 error_end:
 	disconnectC2();
 }
 // buffer size should be 1,2,3,4
-void readXMemory(void){
-	BYTE buf[512];
+
+void readXMemory(size_t sz){
+	BYTE *buf;
 	HRESULT result;
 	const char *pChar;
+	int num_ok=0;
+	for(int ii=1;ii<17;ii++){
+		if(sz == ii * 256){
+			num_ok=1;
+			break;
+		}
+	}
+	if (num_ok){
+		buf=malloc(sz);
+	} else {
+		wprintf(L"错误:大小必须是256的被倍%d\n",sz);
+		return;
+	}
 	result=GetUSBDeviceSN(0,&pChar);
 	if(FAILED(result)){
 		wprintf(L"Get device serial number error(%x)!\n",result);
@@ -139,12 +161,12 @@ void readXMemory(void){
 		goto error_end;
 		
 	}
-	result=GetXRAMMemory(buf, 0, 512);
+	result=GetXRAMMemory(buf, 0, sz);
 	if(FAILED(result)){
 		wprintf(L"Read XRAM error(%x)\n",result);
 		goto error_end;
 	}
-	show(buf,32);
+	show(buf,sz);
 
 	Sleep(1000);
 
@@ -154,7 +176,9 @@ void readXMemory(void){
 	}
 
 error_end:
+	free(buf);
 	disconnectC2();
+	
 }
 #define RUNNING 1
 #define STOP 2
@@ -204,7 +228,7 @@ L"***************************************\n\
 			  wprintf(L"Read XRAM error(%x)\n",result);
 			  goto error_end;
 			}
-			show(buf,16*num_page);
+			show(buf,256*num_page);
 			mcu_sta=STOP;
 		  }
 		}
@@ -257,7 +281,7 @@ L"***************************************\n\
 						wprintf(L"Read RAM error(%x)\n",result);
 						goto error_end;
 					}
-					show(buf,16);
+					show(buf,256);
 				}
 				break;
 

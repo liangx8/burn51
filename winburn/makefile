@@ -1,22 +1,29 @@
 .PHONY: clean
 CC=gcc
+RM=rm -rf
 WINDRES=windres
-CFLAGS= -mwindows -Wall -g -DUNICODE
-OBJS=burn.o readmcu.o
-LDFLAGS=${FLAG} siutil.lib --enable-auto-import --static #-lgdi32  -lmingw32
+CFLAGS= -Wall -g -DUNICODE -m32
+SRC=${shell ls *.c}
+OBJS=${SRC:.c=.o}
+RCS=${shell ls *.rc}
+RES=${RCS:.rc=.res}
+LDFLAGS=${FLAG} siutil.lib
+LDFLAGS+=--enable-auto-import
+LDFLAGS+=--static
+#LDFLAGS+=-lmingw32
+#LDFLAGS+=-lgdi32
 TARGET=burn
 
 all:${TARGET}.exe
-	@echo "*** Done ***"
-${TARGET}.exe:${OBJS}
-	${CC} -o $@ ${OBJS} ${LDFLAGS}
-
+	echo "*** Done ***"
+${TARGET}.exe:${OBJS} ${RES}
+	${CC} ${OBJS} ${RES} -o $@ ${LDFLAGS}
 
 clean:
-	${RM} -rf *.o *.exe *.res
+	${RM} *.o *.exe *.res
 
 .c.o:
-	${CC} -c $< ${CFLAGS}
+	${CC} -c $< ${CFLAGS} -o $@
 
-%.res: %.rc resource.h
+%.res:%.rc
 	${WINDRES} -DGCC_WINDRES -O coff $< $@
