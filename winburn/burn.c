@@ -22,13 +22,17 @@ runing depend on SiUtl.dll and USBHID.dll,
 #include "burn.h"
 #include "dll.h"
 
-
+wchar_t *g_pwc;
 void readCodeMemory(const char *file,DWORD size);
 
 void readXMemory(size_t);
 void readMemory(void);
 void interAction(void);
-
+void a2u(wchar_t *,const char *);
+void print_msg(HRESULT res)
+{
+	wprintf(L"Code[0x%x]\n",res);
+}
 HRESULT connectC2(const char *serialName,int powerTarget,int disableDialogBox){
     HRESULT result;
     result=ConnectUSB(serialName,C2_PROTOCOL,powerTarget,disableDialogBox);
@@ -39,6 +43,14 @@ HRESULT connectC2(const char *serialName,int powerTarget,int disableDialogBox){
     }
     return result;
 }
+/*
+void a2u(wchar_t *,const char *);
+void print_msg(const wchar_t *fmt,const char *str){
+	wchar_t *wc=malloc(256);
+	a2u(wc,str);
+	wprintf(L"%s\n",wc);
+	free(wc);
+}*/
 HRESULT disconnectC2(void){
     HRESULT result;
     result=DisconnectUSB();
@@ -54,13 +66,14 @@ HRESULT downloadC2(const char *hexFile,int codeErase,int disableDialog, int flag
 wchar_t *ascii2unicode(const char *src){
     int c=strlen(src);
     int i;
-    wchar_t *wc=malloc(sizeof(wchar_t)*(c+1));
+    
     for(i=0;i<c;i++){
-        wc[i]=src[i];
+        g_pwc[i]=src[i];
     }
-    wc[c]=0;
-    return wc;
+    g_pwc[c]=0;
+    return g_pwc;
 }
+
 void listUSB(int count,struct data *d){
     DWORD i;
     wchar_t *wc;
@@ -73,7 +86,7 @@ void listUSB(int count,struct data *d){
                 if(SUCCEEDED(connectC2(pChar,0,1))){
                     result=SetTargetHalt();
                     if(FAILED(result)){
-                        wprintf(L"Failed to halt target MCU(%x)\n",result);
+                        wprintf(L"Failed to halt target MCU(0x%x)\n",result);
                     } else {
                         result=downloadC2(
 							d->str,
@@ -104,7 +117,6 @@ void listUSB(int count,struct data *d){
             }
             wc=ascii2unicode(pChar);
             wprintf(L"%d:%s\n",(int)i,wc);
-            free(wc);
         } else {
             wprintf(L"Get device serial number error!\n");
         }
@@ -158,6 +170,7 @@ int console_main(struct data *pd){
     const char *dllUSBVersionStr;
     char *dllVersionStr;
     wchar_t *wbuf;
+	g_pwc=malloc(512);
     
 
     
@@ -165,29 +178,29 @@ int console_main(struct data *pd){
     result=GetUSBDLLVersion(&dllUSBVersionStr);
 
     if(FAILED(result)){
-        wprintf(L"dll version error\n");
+        print_msg(result);
     } else {
         wbuf=ascii2unicode(dllUSBVersionStr);
         wprintf(L"USB DLL version:%s\n",wbuf);
-        free(wbuf);
+
     }
     dllVersionStr=GetDLLVersion();
     if(dllVersionStr){
         wbuf=ascii2unicode(dllVersionStr);
         wprintf(L"DLL version:%s\n",wbuf);
-        free(wbuf);
     }
     
 
     result=USBDebugDevices(&dwDevices);
     if(SUCCEEDED(result)){
-        const char *ps;
         if(dwDevices <=0){
             wprintf(L"No USB device found!\n");
             return 0;
         }
-        result=GetDeviceName(&ps);
-        wprintf(L"Target: %x\n",result);
+		if(dwDevices >1){
+            wprintf(L"Multiple device found!(%d)\n",dwDevices);
+		}
+        
 		switch(pd->action){
 			case XRAM:
 			{
@@ -218,14 +231,11 @@ int console_main(struct data *pd){
 
 					wbuf=ascii2unicode(pd->str);
 					wprintf(L"file %s open error\n",wbuf);
-					free(wbuf);
-
 					return 0;
 				}
 				if(!S_ISREG(buf.st_mode)){
 					wbuf=ascii2unicode(pd->str);
 					wprintf(L"%s is not a regular file\n",wbuf);
-					free(wbuf);
 					return 0;
 				}
 				break;
@@ -238,7 +248,7 @@ int console_main(struct data *pd){
         wprintf(L"找到%d个烧写设备\n",(int)dwDevices);
         listUSB(dwDevices,pd);
     } else {
-        wprintf(L"search device error\n");
+        print_msg(result);
     }
     
     return 0;

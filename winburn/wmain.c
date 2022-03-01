@@ -125,7 +125,8 @@ static inline void parse(PSTR cmdLine,struct data *pd)
 			return;
 		default:
 			pd->str=malloc(128);
-			pd->action=BURNIT;
+			if(pd->action == 0)
+				pd->action=BURNIT;
 			goto opt_label;
 		}
 		p++;

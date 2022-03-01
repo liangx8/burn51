@@ -14,40 +14,94 @@ HRESULT run_target(void){
 	}
 	return result;
 }
-void writebin(char *file,BYTE *b,int size){
+
+void a2u(wchar_t *wc,const char *sn){
+    int c=strlen(sn);
+    int i;
+    for(i=0;i<c;i++){
+		char c=sn[i];
+		if(c & 0x80){
+			wc[i]=L'?';
+		} else {
+			wc[i]=sn[i];
+		}
+    }
+    wc[c]=0;
+	
+}
+HRESULT conn_and_print(wchar_t *wc,const char **sn){
+	HRESULT result;
+	result=GetUSBDeviceSN(0,sn);
+	if(FAILED(result)){
+		wprintf(L"Get device serial number error(%x)!\n",result);
+	} else {
+		a2u(wc,*sn);
+		wprintf(L"EC6 设备:[%s]\n",wc);
+	}
+	return result;
+}
+void writebin(const char *file,BYTE *b,int size){
 	FILE *fp=fopen(file,"wb");
+		wchar_t *p=malloc(256);
+		a2u(p,file);
 	if(fp==NULL){
-		wprintf(L"%s can't be created\n",file);
+		wprintf(L"%s can't be created\n",p);
+		free(p);
 		return;
 	}
 	fwrite(b,1,size,fp);
 	fclose(fp);
+	wprintf(L"保存到 %s ...\n",p);
+	free(p);
 }
-void readCodeMemory(char *file,DWORD size){
+void readCodeMemory(const char *file,DWORD size){
 	BYTE *buf;
+	
 	HRESULT result;
 	const char *pChar;
-	result=GetUSBDeviceSN(0,&pChar);
-	if(FAILED(result)){
-		wprintf(L"Get device serial number error(%x)!\n",result);
+	int num_ok=0;
+	if(file==NULL){
+		wprintf(L"提供文件名\n");
+		return ;
+	}
+	for(int ii=1;ii<80;ii++){
+		if(size == ii * 256){
+			num_ok=1;
+			break;
+		}
+	}
+	if (num_ok){
+		buf=malloc(size);
+	} else {
+		wprintf(L"错误:大小必须是256的倍%d\n",size);
 		return;
 	}
-	result=connectC2(pChar,0,1);
-	if(FAILED(result)){
-		return;
-	}
-
 	buf=malloc(size);
 	if(buf==NULL){
 		wprintf(L"insufficient memory!\n");
 		return;
 	}
+	result=conn_and_print((wchar_t *)buf,&pChar);
+	if(FAILED(result)){
+		wprintf(L"Get device serial number error(%x)!\n",result);
+		free(buf);
+		return;
+	}
+	
+	result=connectC2(pChar,0,1);
+	if(FAILED(result)){
+		wprintf(L"连接出错了%d\n",result);
+		free(buf);
+		return;
+	}
+
 	result=GetCodeMemory(buf,0,size);
 	if(FAILED(result)){
-		wprintf(L"read code memory error\n");
+		wprintf(L"read code memory error,%d\n",result);
+	} else{
+		writebin(file,buf,size);
 	}
 	disconnectC2();
-	writebin(file,buf,size);
 	free(buf);
 	return ;
 }
@@ -87,7 +141,7 @@ void readMemory(void){
 	BYTE buf[256];
 	HRESULT result;
 	const char *pChar;
-	result=GetUSBDeviceSN(0,&pChar);
+	result=conn_and_print((wchar_t *)buf,&pChar);
 	if(FAILED(result)){
 		wprintf(L"Get device serial number error(%x)!\n",result);
 		return;
@@ -124,7 +178,6 @@ error_end:
 	disconnectC2();
 }
 // buffer size should be 1,2,3,4
-
 void readXMemory(size_t sz){
 	BYTE *buf;
 	HRESULT result;
@@ -139,16 +192,18 @@ void readXMemory(size_t sz){
 	if (num_ok){
 		buf=malloc(sz);
 	} else {
-		wprintf(L"错误:大小必须是256的被倍%d\n",sz);
+		wprintf(L"错误:大小必须是256的倍%d\n",sz);
 		return;
 	}
-	result=GetUSBDeviceSN(0,&pChar);
+	result=conn_and_print((wchar_t *)buf,&pChar);
 	if(FAILED(result)){
 		wprintf(L"Get device serial number error(%x)!\n",result);
+		free(buf);
 		return;
 	}
 	result=connectC2(pChar,0,1);
 	if(FAILED(result)){
+		free(buf);
 		return;
 	}
 	wprintf(L"Target running...\n");
@@ -180,6 +235,7 @@ error_end:
 	disconnectC2();
 	
 }
+
 #define RUNNING 1
 #define STOP 2
 #define WAIT_XRAM_PAGE 3
@@ -188,7 +244,7 @@ void interAction(void){
 	HRESULT result;
 	const char *pChar;
 	int	mcu_sta;
-	result=GetUSBDeviceSN(0,&pChar);
+	result=conn_and_print((wchar_t *)buf,&pChar);
 	if(FAILED(result)){
 		wprintf(L"Get device serial number error(%x)!\n",result);
 		return;
