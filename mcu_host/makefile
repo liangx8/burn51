@@ -2,12 +2,15 @@
 #CC=as31
 #CC=asemw
 #BATTERY TYPE 1:NIHM 2:LIPO
-ASRC=${shell ls *.s}
+ASRC= main.s burn.s data.s
 OBJS=${ASRC:.s=.rel}
 
 LFLAGS=-m
+LFLAGS+=-u
 LFLAGS+=-M
 LFLAGS+=-i
+LFLAGS+=-b CSEG=0x80 -b DSEG=0x30
+
 
 TARGET = br
 #TARGET = phone_charger
@@ -21,12 +24,14 @@ LD=sdld
 
 CFLAGS=-l -s -o
 
-all:${TARGET}.hex
+all:${TARGET}.ihx
+	@mv ${TARGET}.ihx ${TARGET}.hex
+	d52 -d  ${TARGET}.hex
 	@echo "*** Done ***"
-${TARGET}.hex:${OBJS}
+${TARGET}.ihx:${OBJS}
 	${LD} $@ ${LFLAGS} ${OBJS}
 clean:
-	${RM} -rf *.hex *.rel *.sym *.lst *.map *.mem
+	${RM} -rf *.hex *.rel *.sym *.lst *.map *.mem *.rst
 
 %.rel:%.s
 	${AS} ${CFLAGS} $@ $<
