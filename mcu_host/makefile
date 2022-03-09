@@ -1,29 +1,32 @@
 .PHONY: clean
 #CC=as31
-CC=asemw
+#CC=asemw
 #BATTERY TYPE 1:NIHM 2:LIPO
+ASRC=${shell ls *.s}
+OBJS=${ASRC:.s=.rel}
 
-CFLAG=/COLUMNS 
-TARGET = burn
+LFLAGS=-m
+LFLAGS+=-M
+LFLAGS+=-i
+
+TARGET = br
 #TARGET = phone_charger
 #TARGET = exercise
 #TARGET = test
 #AS=d:/p/mcu_dev/sdcc/bin/sdas8051.exe
 #LD=d:/p/mcu_dev/sdcc/bin/sdld.exe -i
-AS=sdas8051.exe
-LD=sdld.exe -i
+AS=sdas8051
+LD=sdld
 
 
 CFLAGS=-l -s -o
 
-all:b320.ihx
+all:${TARGET}.hex
 	@echo "*** Done ***"
-$(TARGET).hex:$(TARGET).asm
-	${CC} ${CFLAG} ${TARGET}.asm
-b320.ihx:b320.ref
-	${LD} $@ $<
+${TARGET}.hex:${OBJS}
+	${LD} $@ ${LFLAGS} ${OBJS}
 clean:
-	${RM} -rf *.ihx *.ref *.sym *.lst
+	${RM} -rf *.hex *.rel *.sym *.lst *.map *.mem
 
-%.ref:%.asm
+%.rel:%.s
 	${AS} ${CFLAGS} $@ $<
