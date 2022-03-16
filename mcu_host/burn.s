@@ -34,14 +34,13 @@ FW_PAGES	.equ 1
 
 ; }}}
 
-.area BITSEG
+.area BSEG
 
 .area DSEG
-;. = . + 0x30
 hi_addr:			.ds 1
 fw_page:			.ds 1
 
-.area CSEG
+.area CSEG(REL,CON)
 	.str "@@@TAG#@@@"
 	.db ' '
 	.str "date: @@@DATE@@@"

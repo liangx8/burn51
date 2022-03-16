@@ -6,8 +6,7 @@
 
 .globl framework
 
-.area CDATA (REL,CON)
-.bndry 0x100
+.area CSEG
 framework:
 .str "0123456789ABCDEF"
 .str "0123456789ABCDEF"

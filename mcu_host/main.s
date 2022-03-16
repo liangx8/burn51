@@ -12,7 +12,7 @@
     ljmp	start
 .org 0x03
     reti	;ljmp	ext0_int
-.org 0x0b
+.org  0x0b
     reti	;ljmp    t0_overflow_int
 .org 0x13
     reti	;	ljmp    ext1_int

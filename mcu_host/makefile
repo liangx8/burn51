@@ -2,14 +2,17 @@
 #CC=as31
 #CC=asemw
 #BATTERY TYPE 1:NIHM 2:LIPO
-ASRC= main.s burn.s data.s
+ASRC= ${shell ls *.s}
+#ASRC=main.s burn.s data.s
 OBJS=${ASRC:.s=.rel}
 
 LFLAGS=-m
 LFLAGS+=-u
 LFLAGS+=-M
 LFLAGS+=-i
-LFLAGS+=-b CSEG=0x80 -b DSEG=0x30
+LFLAGS+=-b CSEG=0x7e
+#LFLAGS+=-b _CODE=0x80
+LFLAGS+=-b DSEG=0x30
 
 
 TARGET = br
@@ -22,7 +25,7 @@ AS=sdas8051
 LD=sdld
 
 
-CFLAGS=-l -s -o
+CFLAGS=-l
 
 all:${TARGET}.ihx
 	@mv ${TARGET}.ihx ${TARGET}.hex
@@ -34,4 +37,4 @@ clean:
 	${RM} -rf *.hex *.rel *.sym *.lst *.map *.mem *.rst
 
 %.rel:%.s
-	${AS} ${CFLAGS} $@ $<
+	${AS} ${CFLAGS} -o $@ $<
