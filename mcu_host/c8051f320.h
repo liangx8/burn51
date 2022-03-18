@@ -4,7 +4,7 @@
 
 ;/*  BYTE Registers  */
 ;P0       .equ 0x80     ;  /* PORT 0                                        */
-SP       .equ 0x81     ;  /* STACK POINTER                                 */
+;SP       .equ 0x81     ;  /* STACK POINTER                                 */
 DPL      .equ 0x82     ;  /* DATA POINTER - LOW BYTE                       */
 DPH      .equ 0x83     ;  /* DATA POINTER - HIGH BYTE                      */
 PCON     .equ 0x87     ;  /* POWER CONTROL                                 */

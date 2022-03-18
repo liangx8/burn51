@@ -5,7 +5,7 @@
 ;;; c2_data_read,c2_data_write,c2_addr_read,c2_addr_write have issues as below
 ;;; 等待反馈时，没有检测超时机制, 看pi_inbusy,应该只有这里会死循环
 .include "c8051f320.h"
-.globl start,framework
+.globl init_start,framework
 
 C2D			.equ 6
 C2CK		.equ 7
@@ -25,6 +25,12 @@ LED_MDIN	.equ P2MDIN
 C2_MDIN		.equ P2MDIN
 C2_MDOUT	.equ P2MDOUT
 
+SYSCLK		.equ 24000000
+SYSPRE		.equ 12
+MS			.equ 1000
+US   		.equ 1000000
+MS500		.equ 500 * (SYSCLK / SYSPRE / MS)
+US500		.equ 500 * (SYSCLK / SYSPRE/US)
 
 ; P1.2 P1.3 / P0.6 P0.7
 ; SDA p0.6, SCL p0.7
@@ -44,7 +50,7 @@ fw_page:			.ds 1
 	.str "@@@TAG#@@@"
 	.db ' '
 	.str "date: @@@DATE@@@"
-start:
+init_start:
 	mov		RSTSRC,#6
 	; set Vdd Monitor Contorl
 	mov		VDM0CN,#0x80
@@ -63,6 +69,12 @@ start:
 ; ready for burn
 	acall	delay_500ms
 	setb	GREEN_LED
+	clr		RED_LED
+1$:
+	cpl		GREEN_LED
+	cpl		RED_LED
+	acall	delay_500ms
+	sjmp	1$
 burn_ready:
 	jnb		BU,burn_ready
 1$:
@@ -173,23 +185,23 @@ burn:
 ; }}}
 ; {{{ functions delay
 delay_500ms:
-	mov		r4,#9
+	clr		a
+	mov		TMR2H,a
+	mov		TMR2L,a
+	mov		r0,#MS500 >> 16
+	setb	tr2
 1$:
-	acall	delay_5000us
-	djnz	r4,1$
-delay_5000us:
-	mov		r3,#249
-1$:
-	acall	delay_20us
-	djnz	r3, 1$
+	jnb		TF2H,1$
+	clr		TF2H
+	djnz	r0,1$
+2$:
+	mov		a,TMR2H
+	clr		c
+	subb	a,#(MS500 >> 8) & 0xff
+	jc		2$
+	clr		tr2
+	ret
 delay_20us:
-	mov		r2,#0
-	djnz	r2, .
-	ret
-delay_2us:
-	mov		r2,#25
-	djnz	r2, .
-	ret
 ; }}}
 ; {{{ function init,init_other
 init:
@@ -197,9 +209,22 @@ init:
 	; OSCICN [IOSCEN|IFRDY|SUSPEND|STSYNC|-|-|IFCN1|IFCN0]
 	; IOSCEN 1:Internal High-Frequency Oscillator enabled
 	; IFCN[1:0] 11:SYSCLK DERIVED FROM INTERNAL H-F OSCILLATOR divided by 1
-	mov		OSCICN,#0x83
-	; SET oscillator source, use internal H-F Oscilator
-	mov		CLKSEL,#0
+	; 内部时钟使能，系统时钟使用内部时钟 divided by 1
+	mov		OSCICN,#0x80
+	; 选择内部时钟作为倍频器的原
+	; 1 打开倍频器
+	mov		CLKMUL,#0x80
+	; 2 初始化倍频器
+	mov		CLKMUL,#0b11000000
+1$:	mov		a,CLKMUL
+	jnb		acc.5,1$ ; 等待倍频器初始化完成
+	; 系统时钟使用，4倍频内部时钟 /2
+	; CLKSL : 
+	;	00 使用OSCICN中的选择
+    ;	01 外部时钟, 
+	;	10 系统时钟使用，4倍频内部时钟 /2
+	mov		CLKSEL,#0x02
+	; 此时系统跑在 24M频率下
 
 	; TURN OFF WATCHDOG
 	; PCA0MD[CIDL|WDTE|WDLCK|-|CPS2|CPS1+CPS-|ECF]
@@ -227,18 +252,15 @@ init_timer:
 	; T2 Timer use prescale clock and prescale clock is system clock divided by 12
 	; T2MH 和后面 T3XCLK = 00 设定T2H 用sysclk/12
 	; Don't care T0,T1,T3 timer
-	clr		a
-	mov		CKCON,a
-	; T2SPLIT = 1 8bit mode
+	; T2SPLIT = 0 16bit mode
 	; T2XCLK和前面的T2MH, T2高位用 sysclk/12
-	mov		TMR2CN,#0b00001000
+	clr		a
+	mov		TMR2CN,a
 
-; T2低字节不能停止 。因此使用高字节
 	mov		TMR2H,a
 	mov		TMR2RLH,a
 	mov		TMR2RLL,a
-	clr		TR2
-	; 因为T2L 无法控制停止。考虑用于烧写时的超时计算
+	clr		tr2
 	ret
 ; }}}
 ; C2 interface routines {{{
@@ -391,7 +413,7 @@ pi_init:
 ;;; 让单片机回复到正常运行状态
 ;;; 文档AN127.PDF中描述需要20ms的延时。
 	setb	rs0
-	acall	delay_5000us
+	;acall	delay_5000us
 	clr		rs0
 
 	ret

@@ -7,6 +7,7 @@
 .globl framework
 
 .area CSEG
+.bndry 0x100
 framework:
 .str "0123456789ABCDEF"
 .str "0123456789ABCDEF"
