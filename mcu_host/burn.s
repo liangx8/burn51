@@ -13,6 +13,10 @@ C2CK		.equ 7
 OC2D		.equ p2+C2D
 OC2CK		.equ p2+C2CK
 
+
+TPIN		.equ p0+4
+RPIN		.equ p0+5
+
 BUTTON		.equ 5
 BU			.equ p2+BUTTON
 RED			.equ 2
@@ -30,12 +34,14 @@ SYSPRE		.equ 12
 MS			.equ 1000
 US   		.equ 1000000
 MS500		.equ 500 * (SYSCLK / SYSPRE / MS)
+MS200		.equ 200 * (SYSCLK / SYSPRE / MS)
+
 US500		.equ 500 * (SYSCLK / SYSPRE/US)
 
 ; P1.2 P1.3 / P0.6 P0.7
 ; SDA p0.6, SCL p0.7
 
-
+; 定义要烧录的页数, 每页256字节
 FW_PAGES	.equ 1
 
 ; }}}
@@ -45,6 +51,7 @@ FW_PAGES	.equ 1
 .area DSEG
 hi_addr:			.ds 1
 fw_page:			.ds 1
+delay_cnt:			.ds 1
 
 .area CSEG(REL,CON)
 	.str "@@@TAG#@@@"
@@ -56,7 +63,7 @@ init_start:
 	mov		VDM0CN,#0x80
 
 	clr		ea
-	mov		sp,#0xcf
+	mov		sp,#0x80
 	mov		psw,#0
 
 	acall	init
@@ -67,15 +74,17 @@ init_start:
 
 ;ajmp test_buttom_and_led
 ; ready for burn
-	acall	delay_500ms
+	setb	tr2
+	acall	delay_200ms
 	setb	GREEN_LED
+	setb	RED_LED
+	acall	delay_200ms
+	acall	delay_200ms
+	acall	delay_200ms
+	acall	delay_200ms
 	clr		RED_LED
-1$:
-	cpl		GREEN_LED
-	cpl		RED_LED
-	acall	delay_500ms
-	sjmp	1$
 burn_ready:
+; 等待按键释放
 	jnb		BU,burn_ready
 1$:
 	acall	push_button
@@ -84,7 +93,7 @@ burn_ready:
 
 
 	cpl		GREEN_LED
-	acall	delay_500ms
+	acall	delay_200ms
 	cpl		GREEN_LED
 
 	acall	c2_reset
@@ -102,7 +111,6 @@ push_button:
 	jnb		BU,0$
 	ret
 0$:
-	setb	TR2
 	jnb		BU,.
 	jnb		TF2H,push_bad
 	clr		TF2H
@@ -155,9 +163,9 @@ compare:
 verify_error:
 	mov		sp,#0xcf
 	setb	RED_LED
-	acall	delay_500ms
+	acall	delay_200ms
 	clr		RED_LED
-	acall	delay_500ms
+	acall	delay_200ms
 	sjmp	verify_error
 ; }}}
 ; {{{ function burn
@@ -183,27 +191,52 @@ burn:
 	setb	GREEN_LED
 	ret
 ; }}}
-; {{{ functions delay
-delay_500ms:
+inner_cb:
+	cpl		RPIN
+	acall	delay_20us
+	ret
+
+delay_200ms:
+	clr		tr2
 	clr		a
 	mov		TMR2H,a
 	mov		TMR2L,a
-	mov		r0,#MS500 >> 16
+	mov		delay_cnt,#MS200 >> 16
 	setb	tr2
 1$:
-	jnb		TF2H,1$
-	clr		TF2H
-	djnz	r0,1$
+	jbc		TF2H,2$
+	acall	inner_cb
+	sjmp	1$
 2$:
+
+	djnz	delay_cnt,1$
+
+
+3$:
+	acall	inner_cb
 	mov		a,TMR2H
 	clr		c
-	subb	a,#(MS500 >> 8) & 0xff
-	jc		2$
-	clr		tr2
+	subb	a,#(MS200 >> 8) & 0xff
+	jc		3$
+4$:
+	mov		a,TMR2L
+	clr		c
+	subb	a,#MS200 & 0xff
+	jc		4$
 	ret
 delay_20us:
-; }}}
-; {{{ function init,init_other
+	mov		r0,TMR2L
+1$:
+	mov		a,TMR2L
+	clr		c
+	subb	a,r0
+	clr		c
+	subb	a,#0x28
+	jc		1$
+	ret
+
+
+
 init:
 	; set Internal oscillator
 	; OSCICN [IOSCEN|IFRDY|SUSPEND|STSYNC|-|-|IFCN1|IFCN0]
@@ -240,6 +273,9 @@ init:
 init_other:
 
 	mov		a,#0xff				; all pin configured as digital port
+	mov		P0MDIN,a
+	mov		P0MDOUT,a
+
 ;	setb	acc+C2CK			; is N/A for push-pull
 	mov		C2_MDIN,a
 	mov		a,#0xff - ((1<<C2D)+(1<<BUTTON))	; C2D and button set to open-drain

@@ -1,8 +1,10 @@
-*.dll
-*.pdf
-*.lib
+**/*.dll
+**/*.pdf
+**/*.lib
 b.cmd
-*~
-*.exe
-*.o
-*.bin
+**/*~
+**/*.exe
+**/*.o
+**/*.bin
+**/*.d52
+**/*.res
