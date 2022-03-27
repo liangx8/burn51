@@ -1,7 +1,10 @@
 #include <windows.h>
+#include <commctrl.h>
 #include <stdio.h>
 #include "resource.h"
 #include "burn.h"
+
+HWND g_hStatus;
 
 const wchar_t g_szClassName[] = L"myWindowClass";
 
@@ -11,7 +14,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch(msg)
     {
 		case WM_CREATE:
+		{
 			wprintf(L"main window created!\n");
+			g_hStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL,
+				WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0,
+				hwnd, (HMENU)IDC_MAIN_STATUS, GetModuleHandle(NULL), NULL);
+
+			int statwidths[] = {50,150,-1};
+
+			SendMessage(g_hStatus, SB_SETPARTS, sizeof(statwidths)/sizeof(int), (LPARAM)statwidths);
+			SendMessage(g_hStatus, SB_SETTEXT, 0, (LPARAM)L"准备");
+			SendMessage(g_hStatus, SB_SETTEXT, 1, (LPARAM)L"ihex");
+		}
 			break;
 		case WM_COMMAND:
             switch(LOWORD(wParam))
@@ -30,6 +44,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_DESTROY:
             PostQuitMessage(0);
         break;
+		case WM_SIZE:
+		{
+/*
+			UINT width = LOWORD(lParam);
+			UINT height = HIWORD(lParam);
+			wprintf(L"width: %d,height: %d\n",width,height);
+*/
+			SendMessage(g_hStatus,WM_SIZE,0,0);
+		}
+		break;
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
@@ -41,7 +65,9 @@ int WINAPI GuiMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
     WNDCLASSEX wc;
     HWND hwnd;
-    MSG Msg;
+    MSG msg;
+
+	InitCommonControls();
 
     //Step 1: Registering the Window Class
     wc.cbSize        = sizeof(WNDCLASSEX);
@@ -86,10 +112,10 @@ int WINAPI GuiMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     UpdateWindow(hwnd);
 
     // Step 3: The Message Loop
-    while(GetMessage(&Msg, NULL, 0, 0) > 0)
+    while(GetMessage(&msg, NULL, 0, 0) > 0)
     {
-        TranslateMessage(&Msg);
-        DispatchMessage(&Msg);
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
     }
-    return Msg.wParam;
+    return msg.wParam;
 }

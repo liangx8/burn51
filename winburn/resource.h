@@ -7,3 +7,4 @@
 #define ID_FILE_EXIT							201
 #define ID_STUFF_GO								202
 
+#define IDC_MAIN_STATUS							300

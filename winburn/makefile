@@ -8,6 +8,7 @@ OBJS=${SRC:.c=.o}
 RCS=${shell ls *.rc}
 RES=${RCS:.rc=.res}
 LDFLAGS=${FLAG} siutil.lib
+LDFLAGS+=-lcomctl32
 LDFLAGS+=--enable-auto-import
 LDFLAGS+=--static
 #LDFLAGS+=-lmingw32
