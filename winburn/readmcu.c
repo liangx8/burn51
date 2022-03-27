@@ -14,7 +14,7 @@ HRESULT run_target(void){
 	}
 	return result;
 }
-
+/*win32api: MultiByteToWideChar*/
 void a2u(wchar_t *wc,const char *sn){
     int c=strlen(sn);
     int i;

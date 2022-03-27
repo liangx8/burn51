@@ -8,3 +8,5 @@
 #define ID_STUFF_GO								202
 
 #define IDC_MAIN_STATUS							300
+
+#define IDC_MAIN_STATIC							1000

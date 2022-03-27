@@ -4,7 +4,12 @@
 #include "resource.h"
 #include "burn.h"
 
+wchar_t *wcb;
+struct data *pm;
+
 HWND g_hStatus;
+
+void a2u(wchar_t *wc,const char *sn);
 
 const wchar_t g_szClassName[] = L"myWindowClass";
 
@@ -15,7 +20,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
 		case WM_CREATE:
 		{
-			wprintf(L"main window created!\n");
+			wcb=malloc(256);
+			LPCREATESTRUCTA cs=(LPCREATESTRUCTA)lParam;
+			wprintf(L"main window created!\n[cx:%d][cy:%d][x:%d][y:%d]\n",cs->cx,cs->cy,cs->x,cs->y);
 			g_hStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL,
 				WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0,
 				hwnd, (HMENU)IDC_MAIN_STATUS, GetModuleHandle(NULL), NULL);
@@ -23,8 +30,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			int statwidths[] = {50,150,-1};
 
 			SendMessage(g_hStatus, SB_SETPARTS, sizeof(statwidths)/sizeof(int), (LPARAM)statwidths);
-			SendMessage(g_hStatus, SB_SETTEXT, 0, (LPARAM)L"准备");
+			if(pm->str){
+				a2u(wcb,pm->str);
+				SendMessage(g_hStatus, SB_SETTEXT, 0, (LPARAM)wcb);
+			} else {
+				SendMessage(g_hStatus, SB_SETTEXT, 0, (LPARAM)L"准备");
+			}
+			
 			SendMessage(g_hStatus, SB_SETTEXT, 1, (LPARAM)L"ihex");
+			
+			HWND hStatic = CreateWindowEx(WS_EX_CLIENTEDGE, L"STATIC", L"文本", 
+            WS_CHILD | WS_VISIBLE  | ES_AUTOVSCROLL | ES_AUTOHSCROLL, 
+            0, 0, 180, 100, hwnd, (HMENU)IDC_MAIN_STATIC, GetModuleHandle(NULL), NULL);
+			if(hStatic==NULL){
+				wprintf(L"static 控件创建错误\n");
+			}
+			
 		}
 			break;
 		case WM_COMMAND:
@@ -39,6 +60,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
         break;
         case WM_CLOSE:
+			free(wcb);
             DestroyWindow(hwnd);
         break;
         case WM_DESTROY:
@@ -46,11 +68,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         break;
 		case WM_SIZE:
 		{
-/*
+
 			UINT width = LOWORD(lParam);
 			UINT height = HIWORD(lParam);
 			wprintf(L"width: %d,height: %d\n",width,height);
-*/
+
 			SendMessage(g_hStatus,WM_SIZE,0,0);
 		}
 		break;
@@ -66,7 +88,7 @@ int WINAPI GuiMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     WNDCLASSEX wc;
     HWND hwnd;
     MSG msg;
-
+	pm=pd;
 	InitCommonControls();
 
     //Step 1: Registering the Window Class
