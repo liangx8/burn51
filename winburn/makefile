@@ -2,15 +2,17 @@
 CC=gcc
 RM=rm -rf
 WINDRES=windres
-CFLAGS= -Wall -g -DUNICODE -m32
-SRC=${shell ls *.c}
+CFLAGS=-Wall
+CFLAGS+=-DUNICODE
+CFLAGS+=-m32
+SRC:=${wildcard *.c}
 OBJS=${SRC:.c=.o}
-RCS=${shell ls *.rc}
+RCS:=${wildcard *.rc}
 RES=${RCS:.rc=.res}
-LDFLAGS=${FLAG} siutil.lib
+LDFLAGS:=siutil.lib
 LDFLAGS+=-lcomctl32
 LDFLAGS+=--enable-auto-import
-LDFLAGS+=--static
+#LDFLAGS+=--static
 #LDFLAGS+=-lmingw32
 #LDFLAGS+=-lgdi32
 TARGET=burn

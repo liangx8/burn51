@@ -3,6 +3,7 @@
 
 #include <windows.h>
 #include "dll.h"
+void a2u(wchar_t *,const char*);
 HRESULT connectC2(const char *sn,int powertarget,int disableDialog);
 HRESULT disconnectC2(void);
 HRESULT run_target(void){
@@ -14,21 +15,7 @@ HRESULT run_target(void){
 	}
 	return result;
 }
-/*win32api: MultiByteToWideChar*/
-void a2u(wchar_t *wc,const char *sn){
-    int c=strlen(sn);
-    int i;
-    for(i=0;i<c;i++){
-		char c=sn[i];
-		if(c & 0x80){
-			wc[i]=L'?';
-		} else {
-			wc[i]=sn[i];
-		}
-    }
-    wc[c]=0;
-	
-}
+
 HRESULT conn_and_print(wchar_t *wc,const char **sn){
 	HRESULT result;
 	result=GetUSBDeviceSN(0,sn);
@@ -37,6 +24,7 @@ HRESULT conn_and_print(wchar_t *wc,const char **sn){
 	} else {
 		a2u(wc,*sn);
 		wprintf(L"EC6 设备:[%s]\n",wc);
+		
 	}
 	return result;
 }

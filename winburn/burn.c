@@ -99,7 +99,7 @@ void listUSB(int count,struct data *d){
                             wprintf(L"烧写出错(%X)\n",result);
                         } else {
                             wprintf(L"*********************************************\n");
-                            wprintf(L"*                 烧写成功                  *\n");
+                            wprintf(L"*                 烧写成功                   *\n");
                             wprintf(L"*********************************************\n");
                         }
                         if(d->flag.bits.goRun){
