@@ -13,22 +13,13 @@ void a2u(wchar_t *wc,const char *sn);
 
 const wchar_t g_szClassName[] = L"myWindowClass";
 
-
-
-
-/// @brief Step 4: the Window Procedure
-/// @param hwnd 
-/// @param msg 
-/// @param wParam 
-/// @param lParam 
-/// @return 
+// Step 4: the Window Procedure
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch(msg)
     {
 		case WM_CREATE:
 		{
-
 			wcb=malloc(256);
 			LPCREATESTRUCTA cs=(LPCREATESTRUCTA)lParam;
 			wprintf(L"main window created!\n[cx:%d][cy:%d][x:%d][y:%d]\n",cs->cx,cs->cy,cs->x,cs->y);
@@ -43,12 +34,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				a2u(wcb,pm->str);
 				SendMessage(g_hStatus, SB_SETTEXT, 0, (LPARAM)wcb);
 			} else {
-				SendMessage(g_hStatus, SB_SETTEXT, 0, (LPARAM)TEXT("准备"));
+				SendMessage(g_hStatus, SB_SETTEXT, 0, (LPARAM)L"准备");
 			}
 			
-			SendMessage(g_hStatus, SB_SETTEXT, 1, (LPARAM)TEXT("ihex"));
+			SendMessage(g_hStatus, SB_SETTEXT, 1, (LPARAM)L"ihex");
 			
-			HWND hStatic = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("STATIC"), TEXT("文本"), 
+			HWND hStatic = CreateWindowEx(WS_EX_CLIENTEDGE, L"STATIC", L"文本", 
             WS_CHILD | WS_VISIBLE  | ES_AUTOVSCROLL | ES_AUTOHSCROLL, 
             0, 0, 180, 100, hwnd, (HMENU)IDC_MAIN_STATIC, GetModuleHandle(NULL), NULL);
 			if(hStatic==NULL){
@@ -90,12 +81,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
-/// @brief 
-/// @param hInstance 
-/// @param hPrevInstance 
-/// @param pd 
-/// @param nCmdShow 
-/// @return 
+
 int WINAPI GuiMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    struct data *pd, int nCmdShow)
 {
@@ -123,7 +109,7 @@ int WINAPI GuiMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     {
         MessageBox(
 			NULL, 
-			TEXT("Window Registration Failed!"), TEXT("Error!"),
+			L"Window Registration Failed!", L"Error!",
             MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
@@ -132,14 +118,14 @@ int WINAPI GuiMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     hwnd = CreateWindowEx(
         WS_EX_CLIENTEDGE,
         g_szClassName,
-        TEXT("单片机烧写"),
+        L"单片机烧写",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, 640, 480,
         NULL, NULL, hInstance, NULL);
 
     if(hwnd == NULL)
     {
-        MessageBox(NULL, TEXT("Window Creation Failed!"), TEXT("Error!"),
+        MessageBox(NULL, L"Window Creation Failed!", L"Error!",
             MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
