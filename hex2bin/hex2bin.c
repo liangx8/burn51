@@ -64,10 +64,7 @@ int parse(struct CONFIG *opts,int argc,char **argv)
 	return 0;
 }
 
-void hexreadline(const struct hexline *hl, void *arg)
-{
-	printf("bufsize:%d,len:%d,linaddr:%d\n",hl->bufsize,hl->len,hl->linaddr);
-}
+
 int find_end(unsigned char *data,int max)
 {
 	int end=0;
@@ -79,33 +76,21 @@ int find_end(unsigned char *data,int max)
 	return end;
 }
 #define BUFSIZE 65536
-void disp_hex(unsigned char *data,int num)
-{
-	printf("      ");
-	for(int ix=0;ix<16;ix++){
-		printf("%02x ",ix);
-	}
-	for(int ix=0;ix<num;ix ++){
-		if(ix % 16 == 0){
-			printf("\n%04x  ",ix & 0xfff0);
-		}
-		printf("%02x ",data[ix]);
-	}
-	printf("\n");
-}
-
+/**
+ * @brief 在指定区域填０，同时把被填充的内容显示出来
+ */
 void disp_asm(unsigned char *data,int offset,int num)
 {
 	if(num>0){
 		unsigned char *base=data+offset;
-		printf(".org 0x%04x: 0x%02x",offset,*base);
+		wprintf(L".org 0x%04x: 0x%02x",offset,*base);
 		*base = '\0';
 		for(int ix=1;ix<num;ix++){
 			unsigned char *ptr=base+ix;
-			printf(",0x%02x",*ptr);
+			wprintf(L",0x%02x",*ptr);
 			*ptr='\0';
 		}
-		printf("\n");
+		wprintf(L"\n");
 	}
 }
 int write_bin(const char *dst,unsigned char *mem,int size)
@@ -116,7 +101,7 @@ int write_bin(const char *dst,unsigned char *mem,int size)
 	}
 	size_t wsz= fwrite(mem,1,size,fdst);
 	if(wsz!=size){
-		printf("写入数据不对\n");
+		wprintf(L"写入数据不对\n");
 		fclose(fdst);
 		return -1;
 	}
@@ -132,7 +117,7 @@ int main(int argc, char **argv)
 		wprintf(L"请提供正确的参数\n");
 		return -1;
 	}
-	printf("src:%s,dst:%s\n",opts.src,opts.dst);
+	//wprintf(L"src:%s,dst:%s\n",opts.src,opts.dst);
 	struct hexfile hf;
 	if(init_hexfile(&hf,BUFSIZE,NULL,opts.src)){
 		show_error(__FILE__,__LINE__);
@@ -140,9 +125,8 @@ int main(int argc, char **argv)
 	}
 	read_hex(&hf);
 	int hexsize=find_end(hf.mem,BUFSIZE)+1;
-	printf("size:%d,hex end:%x\n",hf.memsize,hexsize);
+	wprintf(L"size:%d,hex end:%x,修改:%d\n",hf.memsize,hexsize,opts.pad_count);
 
-	//disp_hex(hf.mem,256);
 	for(int ix=0;ix<opts.pad_count;ix++){
 		int offset=opts.pad[ix].offset;
 		int count=opts.pad[ix].count;
