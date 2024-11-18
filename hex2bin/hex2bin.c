@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <wchar.h>
+#include <locale.h>
 #include "config.h"
 #include "hexfile.h"
 char pch[256];
@@ -51,7 +53,7 @@ int parse(struct CONFIG *opts,int argc,char **argv)
 		}
 	}
 	if(optind >= argc){
-		printf("提供输入hex文件\n");
+		wprintf(L"提供输入hex文件\n");
 		return -1;
 	}
 	opts->src=argv[optind];
@@ -124,9 +126,10 @@ int write_bin(const char *dst,unsigned char *mem,int size)
 void show_error(const char *srcname,int line);
 int main(int argc, char **argv)
 {
+	setlocale(LC_ALL,"");
 	struct CONFIG opts;
 	if(parse(&opts,argc,argv)){
-		printf("请提供正确的参数\n");
+		wprintf(L"请提供正确的参数\n");
 		return -1;
 	}
 	printf("src:%s,dst:%s\n",opts.src,opts.dst);
