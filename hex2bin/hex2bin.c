@@ -109,12 +109,13 @@ int write_bin(const char *dst,unsigned char *mem,int size)
 	return 0;
 }
 void show_error(const char *srcname,int line);
+void usage(const char*);
 int main(int argc, char **argv)
 {
 	setlocale(LC_ALL,"");
 	struct CONFIG opts;
 	if(parse(&opts,argc,argv)){
-		wprintf(L"请提供正确的参数\n");
+		usage(argv[0]);
 		return -1;
 	}
 	//wprintf(L"src:%s,dst:%s\n",opts.src,opts.dst);
