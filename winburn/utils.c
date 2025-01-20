@@ -7,7 +7,7 @@ struct error_stack{
 struct error_stack *top=NULL;
 
 /// @brief ascii to unicode
-/// @ref MultiByteToWideChar
+/// @ref win32api: MultiByteToWideChar()
 /// @param wc 
 /// @param sn 
 void a2u(wchar_t *wc,const char *sn){
@@ -23,10 +23,10 @@ void a2u(wchar_t *wc,const char *sn){
     }
     wc[c]=0;
 }
-char buf[512];
+wchar_t buf[512];
 void error_stack_last_code(const char *srcfile,int line){
     DWORD errCode=GetLastError();
-    LPWSTR fmt=L"%s(%d):%s(%d)";
+    LPWSTR fmt=L"%ls(%d):%ls(%d)";
     DWORD_PTR args[]={(DWORD_PTR)srcfile,(DWORD_PTR)line,0,0};
     void *mem=auto_alloc(256);                                          // 返回错误的处理
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,0,errCode,0,buf,512,NULL); // 返回错误的处理

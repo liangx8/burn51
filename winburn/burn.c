@@ -116,7 +116,7 @@ void listUSB(int count,struct data *d){
                 disconnectC2();
             }
             wc=ascii2unicode(pChar);
-            wprintf(L"%d:%s\n",(int)i,wc);
+            wprintf(L"%d:%ls\n",(int)i,wc);
         } else {
             wprintf(L"Get device serial number error!\n");
         }
@@ -181,13 +181,13 @@ int console_main(struct data *pd){
         print_msg(result);
     } else {
         wbuf=ascii2unicode(dllUSBVersionStr);
-        wprintf(L"USB DLL version:%s\n",wbuf);
+        wprintf(L"USB DLL version:%ls\n",wbuf);
 
     }
     dllVersionStr=GetDLLVersion();
     if(dllVersionStr){
         wbuf=ascii2unicode(dllVersionStr);
-        wprintf(L"DLL version:%s\n",wbuf);
+        wprintf(L"DLL version:%ls\n",wbuf);
     }
     
 
@@ -230,12 +230,12 @@ int console_main(struct data *pd){
 				if(stat(pd->str,&buf)){
 
 					wbuf=ascii2unicode(pd->str);
-					wprintf(L"file %s open error\n",wbuf);
+					wprintf(L"file %ls open error\n",wbuf);
 					return 0;
 				}
 				if(!S_ISREG(buf.st_mode)){
 					wbuf=ascii2unicode(pd->str);
-					wprintf(L"%s is not a regular file\n",wbuf);
+					wprintf(L"%ls is not a regular file\n",wbuf);
 					return 0;
 				}
 				break;

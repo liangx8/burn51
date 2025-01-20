@@ -14,21 +14,7 @@ HRESULT run_target(void){
 	}
 	return result;
 }
-/*win32api: MultiByteToWideChar*/
-void a2u(wchar_t *wc,const char *sn){
-    int c=strlen(sn);
-    int i;
-    for(i=0;i<c;i++){
-		char c=sn[i];
-		if(c & 0x80){
-			wc[i]=L'?';
-		} else {
-			wc[i]=sn[i];
-		}
-    }
-    wc[c]=0;
-	
-}
+void a2u(wchar_t *wc,const char *sn); //define in utils.c
 HRESULT conn_and_print(wchar_t *wc,const char **sn){
 	HRESULT result;
 	result=GetUSBDeviceSN(0,sn);
@@ -36,7 +22,7 @@ HRESULT conn_and_print(wchar_t *wc,const char **sn){
 		wprintf(L"Get device serial number error(%x)!\n",result);
 	} else {
 		a2u(wc,*sn);
-		wprintf(L"EC6 设备:[%s]\n",wc);
+		wprintf(L"EC6 设备:[%ls]\n",wc);
 	}
 	return result;
 }
@@ -45,13 +31,13 @@ void writebin(const char *file,BYTE *b,int size){
 		wchar_t *p=malloc(256);
 		a2u(p,file);
 	if(fp==NULL){
-		wprintf(L"%s can't be created\n",p);
+		wprintf(L"%ls can't be created\n",p);
 		free(p);
 		return;
 	}
 	fwrite(b,1,size,fp);
 	fclose(fp);
-	wprintf(L"保存到 %s ...\n",p);
+	wprintf(L"保存到 %ls ...\n",p);
 	free(p);
 }
 void readCodeMemory(const char *file,DWORD size){
