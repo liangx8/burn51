@@ -1,8 +1,41 @@
 #include <windows.h>
 #include <stdio.h>
 #include <locale.h>
+#include <stdlib.h>
 #include "burn.h"
+const wchar_t winname[]=L"wburn";
 
+int expectWinName(LPWSTR ptr){
+	// wburn.exe
+	int idx=0;
+	int start=0;
+	wprintf(L"self name:%ls\n",ptr);
+	while(1){
+		if(*ptr==0){
+			return 0;
+		}
+		if(*ptr==L' '){
+			return 0;
+		}
+		if(start){
+			if(*ptr == winname[idx]){
+				idx ++;
+			}else{
+				idx=0;
+				start=0;
+			}
+			if(idx == 5){
+				return 1;
+			}
+		} else {
+			if(*ptr == winname[0]){
+				start=1;
+				idx++;
+			}
+		}
+		ptr ++;
+	}
+}
 unsigned int expectSize(const PSTR str,int *length)
 {
 	int len=0;
@@ -50,6 +83,7 @@ burn [option] <file>\n\
 \t\tc - show flash\n\
 \t-s <n>k\n"
 );
+
 }
 wchar_t *ascii2unicode(const char *src);
 static inline void parse(PSTR cmdLine,struct data *pd)
@@ -143,14 +177,17 @@ static inline void parse(PSTR cmdLine,struct data *pd)
 }
 int WINAPI GuiMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,struct data *pd, int nCmdShow);
 int console_main(struct data *pd);
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-   LPSTR lpCmdLine, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine, int nCmdShow)
 {
 	struct data d;
 	setlocale(LC_ALL,"");
-
 	d.flag.value=0;
-	parse(lpCmdLine,&d);
+	if(expectWinName(GetCommandLine())){
+		d.action=GUI;
+	}else{
+		parse(lpCmdLine,&d);
+	}
+	
 	if(d.flag.bits.error){
 		usage();
 		wprintf(d.wstr);

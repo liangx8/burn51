@@ -111,7 +111,7 @@ void show(BYTE *buf,int size){
 		for(j=0;j<16;j++){
 			if(i * 16+j < size){
 				BYTE c=buf[i*16+j];
-				if ((c>='0' && c <='9') || (c >='a' && c <='z') || (c >= 'A' && c <= 'Z'))
+				if ((c>='\x20') && (c <='\x7f'))
 					wprintf(L"%c",c);
 				else
 					wprintf(L".");
