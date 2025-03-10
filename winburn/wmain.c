@@ -93,7 +93,6 @@ static inline void parse(PSTR cmdLine,struct data *pd)
 	pd->size=0;
 	pd->action=0;
 	pd->flag.value=0;
-
 	while(1){
 		switch(*p){
 		case '-':
@@ -182,21 +181,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine,
 	struct data d;
 	setlocale(LC_ALL,"");
 	d.flag.value=0;
-	if(expectWinName(GetCommandLine())){
+	LPWSTR selfname=GetCommandLine();
+	if(expectWinName(selfname)){
 		d.action=GUI;
+		d.str=NULL;
 	}else{
 		parse(lpCmdLine,&d);
+
 	}
-	
+	wprintf(L"中文%lS\n",L"汉字");
 	if(d.flag.bits.error){
 		usage();
 		wprintf(d.wstr);
 		return -1;
 	}
 	if(d.action==GUI){
+		d.wstr=selfname;
 		GuiMain(hInstance,hPrevInstance,&d,nCmdShow);
-		if(d.str)
-			free(d.str);
 		return 0;
 	}
 	if(d.action){

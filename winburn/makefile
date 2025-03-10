@@ -16,7 +16,7 @@ LDFLAGS+=--static
 TARGET=wburn
 
 all:${TARGET}.exe
-	echo "*** Done ***"
+	@echo "*** Done ***"
 ${TARGET}.exe:${OBJS} ${RES}
 	${CC} ${OBJS} ${RES} -o $@ ${LDFLAGS}
 

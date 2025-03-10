@@ -23,4 +23,6 @@ struct data {
         } bits;
     } flag;
 };
+
+#define DBGMSG(fmt,...) wprintf(L"%ls(%d)" fmt,TEXT(__FILE__),__LINE__,__VA_ARGS__)
 #endif
