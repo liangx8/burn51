@@ -83,12 +83,19 @@ void disp_asm(unsigned char *data,int offset,int num)
 {
 	if(num>0){
 		unsigned char *base=data+offset;
-		wprintf(L".org 0x%04x: 0x%02x",offset,*base);
-		*base = '\0';
-		for(int ix=1;ix<num;ix++){
+		wprintf(L".org 0x%04x",offset);
+		int pos=16;
+		for(int ix=0;ix<num;ix++){
 			unsigned char *ptr=base+ix;
-			wprintf(L",0x%02x",*ptr);
+			if( pos==16){
+				pos=0;
+				wprintf(L"\n.db ");
+			} else {
+				wprintf(L",");
+			}
+			wprintf(L"0x%02x",*ptr);
 			*ptr='\0';
+			pos ++;
 		}
 		wprintf(L"\n");
 	}
